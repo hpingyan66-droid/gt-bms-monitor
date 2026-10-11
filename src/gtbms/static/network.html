@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <meta name="theme-color" content="#0b1015">
+  <title>GT Battery · 接続管理</title>
+  <link rel="stylesheet" href="/static/network.css">
+  <script defer src="/static/network.js"></script>
+</head>
+<body>
+  <header class="masthead"><div><span class="brand">GT <span>BATTERY</span></span><h1>スマホへの接続管理</h1></div><span class="badge">Surface専用 · localhost</span></header>
+  <main>
+    <p><span id="edition-label" class="badge">配布種別を確認中</span></p>
+    <p id="edition-note" class="intro" role="status">接続管理を利用できる配布版か確認しています。BMS通信は読み取り専用です。</p>
+    <p class="intro">停車中に、このSurfaceから接続先を選んでください。スマホ画面は引き続き閲覧専用です。</p>
+    <section class="status-panel" id="status-panel" data-state="waiting" aria-labelledby="status-heading">
+      <div class="status-header"><h2 id="status-heading" role="status" aria-live="polite">状態を確認しています</h2><button type="button" id="refresh" class="secondary" disabled>一覧を再取得</button></div>
+      <dl class="summary"><div><dt>現在のモード</dt><dd id="active-mode">未確認</dd></div><div><dt>スマホ閲覧サーバー</dt><dd id="viewer-state">未確認</dd></div><div><dt>管理API応答確認 · JST</dt><dd id="checked-at">—</dd></div><div><dt>Windows接続情報の調査 · JST</dt><dd id="inventory-checked-at">未確認</dd></div></dl>
+      <p id="operation-message">接続管理サービスから状態を取得しています。</p>
+      <p id="operation-warnings" role="status" hidden></p>
+      <p id="notice" role="status" hidden></p>
+      <p id="error" class="error" role="alert" hidden></p>
+    </section>
+
+    <div class="modes">
+      <section class="card mode-card" id="card-mobile_router" aria-labelledby="title-mobile_router">
+        <div class="card-heading"><span class="number">01</span><span class="mode-badge" id="badge-mobile_router" hidden>現在のモード</span></div>
+        <h2 id="title-mobile_router">モバイルルーターモード</h2>
+        <p>所有するモバイルWi-Fiへ、Surfaceとスマホを接続します。</p>
+        <label for="profile-mobile_router">Windows保存済みWi-Fi・アダプター</label>
+        <select id="profile-mobile_router" disabled><option value="">一覧を取得しています</option></select>
+        <p class="saved" id="saved-mobile_router">保存済みの接続先：未登録</p>
+        <div class="card-actions"><button type="button" id="save-mobile_router" class="secondary" disabled>接続先を保存</button><button type="button" id="switch-mobile_router" disabled>このモードに切替</button></div>
+      </section>
+      <section class="card mode-card" id="card-home_router" aria-labelledby="title-home_router">
+        <div class="card-heading"><span class="number">02</span><span class="mode-badge" id="badge-home_router" hidden>現在のモード</span></div>
+        <h2 id="title-home_router">ホームルーターモード</h2>
+        <p>自宅のWi-Fiへ、Surfaceとスマホを接続します。</p>
+        <label for="profile-home_router">Windows保存済みWi-Fi・アダプター</label>
+        <select id="profile-home_router" disabled><option value="">一覧を取得しています</option></select>
+        <p class="saved" id="saved-home_router">保存済みの接続先：未登録</p>
+        <div class="card-actions"><button type="button" id="save-home_router" class="secondary" disabled>接続先を保存</button><button type="button" id="switch-home_router" disabled>このモードに切替</button></div>
+      </section>
+      <section class="card mode-card" id="card-local_area" aria-labelledby="title-local_area">
+        <div class="card-heading"><span class="number">03</span><span class="mode-badge" id="badge-local_area" hidden>現在のモード</span></div>
+        <h2 id="title-local_area">ローカルエリアモード</h2>
+        <p>Surfaceのモバイルホットスポットへ、スマホを接続します。Windowsに設定済みのネットワーク名とパスワードを使用します。</p>
+        <dl class="hotspot-info"><div><dt>ホットスポット</dt><dd id="hotspot-state">未確認</dd></div><div><dt>ネットワーク名</dt><dd id="hotspot-ssid">未確認</dd></div></dl>
+        <p class="saved">パスワードの確認・変更はWindows設定で行ってください。この画面では取得・表示しません。</p>
+        <div class="card-actions"><button type="button" id="hotspot-settings" class="secondary" disabled>ホットスポット設定を開く</button><button type="button" id="switch-local_area" disabled>このモードに切替</button></div>
+      </section>
+    </div>
+
+    <section class="card connection-guide" aria-labelledby="guide-title">
+      <div><h2 id="guide-title">スマホで開く</h2><p>切替後はスマホを案内されたWi-Fiへ再接続し、接続案内のQRを読み取ってください。</p><p class="small">切替成功はSurface側での確認です。スマホからの到達は未確認のため、停車中に実際の表示を確認してください。</p></div>
+      <a id="connection-link" class="button secondary" aria-disabled="true" tabindex="-1">QR・接続案内を開く</a>
+    </section>
+    <details class="card diagnostics"><summary>接続インターフェースの確認</summary><ul id="address-list"><li>未確認</li></ul><ul id="inventory-errors" class="error" hidden></ul></details>
+    <footer><p>モードを切り替えるとスマホの再接続が必要です。BMSのBluetooth監視とSurface内への保存は継続します。</p><p>ファイアウォールの設定に管理者権限が必要な場合、操作中にWindowsのユーザーアカウント制御（UAC）が表示されることがあります。</p><p>外部端末からこの管理画面を操作することはできません。接続案内は閲覧キーを含むため、他の人へ共有しないでください。</p></footer>
+  </main>
+  <noscript><p class="error">接続管理にはJavaScriptを有効にしてください。</p></noscript>
+</body>
+</html>

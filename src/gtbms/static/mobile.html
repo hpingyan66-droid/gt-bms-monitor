@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="referrer" content="no-referrer">
+  <meta name="theme-color" content="#0b1015">
+  <title>GT Battery · スマホ表示</title>
+  <link rel="stylesheet" href="/static/mobile.css">
+  <script defer src="/static/mobile.js"></script>
+</head>
+<body>
+  <header class="masthead"><div><span class="brand">GT <span>BATTERY</span></span><p>D4 PRO · スマホ表示</p></div><span id="mode" class="badge">接続待ち</span></header>
+  <main>
+    <section id="connection" class="connection" data-state="stale" aria-labelledby="status-title">
+      <div class="status-row"><span class="status-dot" aria-hidden="true"></span><h1 id="status-title" role="status" aria-live="polite">接続を待っています</h1></div>
+      <p id="status-detail">Surfaceが案内する同じネットワークに接続してください。</p>
+      <div class="last-received"><span>最終BMS受信 · JST</span><strong id="last-received">—</strong><span id="sample-age">最新の測定値なし</span></div>
+      <p id="source-alerts" class="source-alerts" hidden></p>
+    </section>
+
+    <section id="access-panel" class="card access-panel" aria-labelledby="access-title">
+      <h2 id="access-title">閲覧キーで接続</h2>
+      <p>停車中に、Surfaceで表示した接続リンクを開くか、閲覧キーを貼り付けてください。</p>
+      <form id="access-form" method="get" action="/" novalidate>
+        <label for="access-key">閲覧キー</label>
+        <input id="access-key" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="43" aria-describedby="access-error" placeholder="43文字の閲覧キー">
+        <button type="submit">表示を開始</button>
+        <p id="access-error" class="error" role="alert"></p>
+      </form>
+      <p class="small">キーはこのタブのセッション内だけに保持します。</p>
+    </section>
+
+    <div class="dashboard" aria-label="最新のバッテリー測定値">
+      <section class="card soc-card" aria-labelledby="soc-title">
+        <h2 id="soc-title">バッテリー残量</h2>
+        <div class="hero-value"><strong id="soc">—</strong><span>%</span></div>
+        <div class="soc-track" aria-hidden="true"><span id="soc-fill"></span></div>
+        <p class="capacity">残容量 <strong id="remaining-ah">—</strong> Ah</p>
+      </section>
+      <section class="card range-card" aria-labelledby="range-title">
+        <h2 id="range-title">安全余裕を含む残距離</h2>
+        <div class="range-value"><strong id="safe-range">—</strong><span>km</span></div>
+        <p id="range-note">予測データなし</p>
+        <p class="small">走行履歴に基づく推定値です。</p>
+      </section>
+      <section class="card metric"><h2>総電圧</h2><div class="metric-value"><strong id="voltage">—</strong><span>V</span></div></section>
+      <section class="card metric"><h2 id="current-title">電流</h2><div class="metric-value"><strong id="current">—</strong><span>A</span></div><p id="current-note">符号方向 未確認</p></section>
+      <section class="card metric"><h2>瞬時電力</h2><div class="metric-value"><strong id="power">—</strong><span>W</span></div><p id="power-note">符号確認後に表示</p></section>
+      <section class="card metric"><h2>NTC温度 · 最大</h2><div class="metric-value"><strong id="temperature">—</strong><span>℃</span></div><p>センサー位置 未確認</p></section>
+      <section class="card metric"><h2>セル電圧差</h2><div class="metric-value"><strong id="cell-delta">—</strong><span>mV</span></div></section>
+      <section class="card metric protection"><h2>BMS保護状態</h2><p id="alarms">最新の測定値なし</p></section>
+    </div>
+
+    <details class="card details">
+      <summary>セル電圧・測定の詳細</summary>
+      <p class="small">セルごとの電圧（V）</p>
+      <div id="cells" class="cells"><p class="empty">最新の測定値なし</p></div>
+      <dl class="detail-list"><div><dt>通常条件の残距離</dt><dd id="normal-range">—</dd></div><div><dt>満充電時の距離</dt><dd id="full-range">—</dd></div><div><dt>BMS電流の生値</dt><dd id="raw-current">—</dd></div><div><dt>充電MOS / 放電MOS</dt><dd id="mos">—</dd></div><div><dt>測定値の品質</dt><dd id="quality">最新の測定値なし</dd></div></dl>
+    </details>
+    <details class="card details diagnostics" id="diagnostics-panel">
+      <summary>表示の比較診断 · 停車中に設定</summary>
+      <p class="small">直近の取得試行を表示します。通信RTTはHTTP往復時間（応答本文の読取りを含む）、DOM反映は画面要素の更新処理時間で、描画完了時間ではありません。</p>
+      <dl class="detail-list">
+        <div><dt>通信RTT</dt><dd id="diag-rtt">—</dd></div>
+        <div><dt>DOM反映処理</dt><dd id="diag-dom">—</dd></div>
+        <div><dt>受信後経過 · 上限推定</dt><dd id="diag-age">—</dd></div>
+        <div><dt>Surface中継キャッシュの経過</dt><dd id="diag-relay">—</dd></div>
+        <div><dt>Surface内HTTP往復</dt><dd id="diag-upstream">—</dd></div>
+        <div><dt>中継の目標更新周期</dt><dd id="diag-refresh">—</dd></div>
+      </dl>
+      <p class="small">受信後経過はSurfaceの値の年齢＋要求全体の経過時間による上限推定です。スマホとPCの時計を引いた値や片道通信時間ではありません。</p>
+      <div class="comparison-labels">
+        <label for="compare-device">この画面を開いている端末 · 手動申告</label>
+        <select id="compare-device"><option value="unknown">未確認</option><option value="android">Android</option><option value="iphone">iPhone</option><option value="surface">Surface</option></select>
+        <label for="compare-adapter">BMS受信アダプター · 手動申告</label>
+        <select id="compare-adapter"><option value="unknown">未確認</option><option value="internal">内蔵</option><option value="external">外付け</option></select>
+        <label for="compare-network">スマホへの経路 · 手動申告</label>
+        <select id="compare-network"><option value="unknown">未確認</option><option value="mobile_router">モバイルルーターモード</option><option value="home_router">ホームルーターモード</option><option value="local_area">ローカルエリアモード · Surface直接接続</option><option value="router">旧記録用 · ルーター種別不明</option><option value="hotspot">旧記録用 · ホットスポット</option><option value="bluetooth">Bluetoothネットワーク</option></select>
+        <label for="compare-motor">モーター状態 · 手動申告</label>
+        <select id="compare-motor"><option value="unknown">未確認</option><option value="stopped">停止</option><option value="running">動作</option></select>
+      </div>
+      <p class="small">停車中に条件を選び、画面を開いたまま120秒待つと自動終了します。端末・アダプター・経路は自動検出しません。記録中は条件を変更できません。画面を隠した場合も終了します。</p>
+      <div class="comparison-actions"><button type="button" id="compare-start">120秒の比較記録開始</button><button type="button" id="compare-stop" disabled>途中で終了</button><button type="button" id="compare-save" disabled>JSON保存</button></div>
+      <p id="compare-status" class="small" role="status">未記録</p>
+      <dl class="detail-list comparison-summary">
+        <div><dt>HTTP成功応答</dt><dd id="compare-http-success">0</dd></div>
+        <div><dt>鮮度内の表示成功</dt><dd id="compare-fresh-success">0</dd></div>
+        <div><dt>新しいBMS受信サンプル</dt><dd id="compare-new-count">0</dd></div>
+        <div><dt>HTTP・通信失敗の観測数</dt><dd id="compare-failure-count">0</dd></div>
+        <div><dt>HTTP成功だが古い・不正な応答</dt><dd id="compare-stale-count">0</dd></div>
+        <div><dt>HTTP往復 p50 / p95</dt><dd id="compare-rtt">—</dd></div>
+        <div><dt>新データ到着間隔 p50 / p95</dt><dd id="compare-updates">—</dd></div>
+        <div><dt>受信後経過の上限 p50 / p95</dt><dd id="compare-age">—</dd></div>
+        <div><dt>データの種類</dt><dd id="compare-source">未確認</dd></div>
+      </dl>
+      <p class="small">p50は中央値、p95は95%の値が収まる値です。上の分位点は鮮度内に表示できた応答だけを集計し、通信失敗や古い応答は件数を分けます。新データは同じ受信時刻を重複計上しません。接続し直す途中の要求や、記録開始前・終了後の応答は含まず、全切断回数を表すものではありません。</p>
+      <p class="small">JSONには手動条件、時刻、件数、時間指標、実機／模擬の区分だけを保存します。閲覧キー・IP・GPS・バッテリー測定値は含めず、サーバーにも送信しません。直近600件が上限です。次の開始で前の記録を置き換えるため、必要な記録は先に保存してください。</p>
+    </details>
+    <footer>
+      <p><strong>接続・操作・確認は停車中に。</strong>走行中は画面を見続けず、道路に注意してください。</p>
+      <p>スマホの接続が切れても、Surface側のBMS監視は継続します。Surfaceがスリープすると記録は止まります。</p>
+      <p>画面の自動ロックは、必要に応じて出発前にスマホの設定で調整してください。</p>
+      <span>READ ONLY · 同じローカルネットワーク内で閲覧</span>
+    </footer>
+  </main>
+  <noscript><p class="noscript">測定値の表示にはJavaScriptを有効にしてください。</p></noscript>
+</body>
+</html>

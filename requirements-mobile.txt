@@ -1,0 +1,2 @@
+# Optional local QR generation. The read-only viewer itself uses existing dependencies.
+qrcode==8.2

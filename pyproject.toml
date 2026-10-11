@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "gt-bms-monitor"
+version = "0.2.0"
+description = "Read-only Windows JBD BMS monitor and local ride analysis"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE", "THIRD_PARTY_NOTICES.md"]
+requires-python = ">=3.12"
+dependencies = ["fastapi==0.143.0", "uvicorn==0.54.0", "bleak==3.0.2", "psutil==7.2.2", "websockets==17.2"]
+
+[project.urls]
+Repository = "https://github.com/hpingyan66-droid/gt-bms-monitor"
+
+[project.optional-dependencies]
+test = ["pytest>=8,<10", "pytest-asyncio>=1,<2", "httpx>=0.28,<1"]
+diagnostic = ["aiobmsble==0.29.0", "bleak-retry-connector==4.6.3"]
+mobile = ["qrcode==8.2"]
+
+[project.scripts]
+gtbms = "gtbms.cli:main"
+
+[tool.setuptools.package-data]
+gtbms = ["static/*", "edition.json"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+asyncio_mode = "auto"

@@ -1,0 +1,8 @@
+{
+  "source": "synthetic",
+  "hardware_verified": false,
+  "description": "テスト用に構成したJBDペイロード。GT実機のキャプチャではありません。フレーム化時のチェックサムはテストで生成します。",
+  "basic_payload_hex": "1a35fc18138813880007000000010000000029640310020ba50bb9",
+  "cell_millivolts": [4193,4193,4193,4193,4193,4193,4193,4193,4193,4193,4193,4193,4193,4193,4193,4195],
+  "expected": {"voltage_v":67.09,"raw_current_a":-10,"remaining_ah":50,"configured_ah":50,"cycles":7,"soc_pct":100,"temperatures_c":[25,27],"bms_version":41}
+}

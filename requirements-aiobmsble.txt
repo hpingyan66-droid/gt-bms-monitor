@@ -1,0 +1,4 @@
+# Optional, bounded JBD authentication diagnostic. Python >= 3.12.
+aiobmsble==0.29.0
+bleak-retry-connector==4.6.3
+bleak==3.0.2
