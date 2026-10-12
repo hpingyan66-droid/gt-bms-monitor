@@ -1,0 +1,8 @@
+{
+  "package": "jp.k4159191.gtbms.recovery",
+  "alias": "gtbms-recovery",
+  "certificate_sha256": "19aab1ce8543bebd734f05723ad5fdb9eb24806f5fcf15d787aeb32cf2acf9c6",
+  "original_certificate_sha256": "3436a806f9a3f8d1eec53e1a35378db5a5a07d5229aabf32d312ea028af745da",
+  "is_original_key": false,
+  "created_utc": "2026-10-12"
+}
