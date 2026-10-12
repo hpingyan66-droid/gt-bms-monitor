@@ -1,0 +1,15 @@
+plugins { id 'com.android.application' }
+android {
+    namespace 'jp.k4159191.gtbms.prototype'
+    compileSdk 35
+    defaultConfig {
+        applicationId 'jp.k4159191.gtbms.prototype'
+        minSdk 26
+        targetSdk 35
+        versionCode 4
+        versionName '0.2.1-prototype'
+        testInstrumentationRunner 'jp.k4159191.gtbms.prototype.SmokeTests'
+    }
+    compileOptions { sourceCompatibility JavaVersion.VERSION_1_8; targetCompatibility JavaVersion.VERSION_1_8 }
+    buildTypes { release { minifyEnabled false } }
+}
