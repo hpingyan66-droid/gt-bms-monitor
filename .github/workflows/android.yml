@@ -1,0 +1,40 @@
+name: Android source validation
+
+on:
+  pull_request:
+    paths:
+      - 'android/**'
+      - '.github/workflows/android.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'android/**'
+      - '.github/workflows/android.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Host calculations and profile regression tests
+        run: python3 android/scripts/test_host.py
+      - name: Install Android compile SDK
+        shell: bash
+        run: |
+          "${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager" "platforms;android-35" "build-tools;35.0.0"
+      - name: Compile Android application and instrumentation sources
+        shell: bash
+        run: |
+          python3 android/scripts/check_android.py \
+            --android-jar "${ANDROID_HOME}/platforms/android-35/android.jar" \
+            --build-tools "${ANDROID_HOME}/build-tools/35.0.0"
