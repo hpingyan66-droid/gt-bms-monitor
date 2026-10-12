@@ -26,7 +26,7 @@ jobs:
         run: python -m unittest discover -s android/recovery/tests -v
   android:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -60,6 +60,6 @@ jobs:
         shell: bash
         run: |
           "${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager" "emulator" "system-images;android-35;aosp_atd;x86_64"
-          test -r /dev/kvm && test -w /dev/kvm
+          if [ -e /dev/kvm ]; then sudo chmod 0666 /dev/kvm; fi
       - name: Android migration and data preservation integration test
         run: python3 android/recovery/tests/run_ci_emulator.py

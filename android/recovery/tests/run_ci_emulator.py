@@ -45,11 +45,14 @@ run(sdk / 'cmdline-tools/latest/bin/avdmanager', 'create', 'avd', '--name', 'gtb
     '--package', 'system-images;android-35;aosp_atd;x86_64', input=b'no\n')
 run(adb, 'start-server')
 with (work / 'emulator.log').open('w') as log:
+    accelerated = os.path.exists('/dev/kvm') and os.access('/dev/kvm', os.R_OK | os.W_OK)
+    acceleration = [] if accelerated else ['-accel', 'off']
     emu = subprocess.Popen([str(sdk / 'emulator/emulator'), '-avd', 'gtbms_recovery_ci', '-no-window',
-        '-no-audio', '-no-boot-anim', '-no-snapshot', '-gpu', 'swiftshader_indirect', '-cores', '2',
-        '-memory', '2048', '-port', '5554', '-no-metrics'], stdout=log, stderr=subprocess.STDOUT)
+        '-no-audio', '-no-boot-anim', '-no-snapshot', '-gpu', 'off', '-cores', '2',
+        '-memory', '2048', '-port', '5554', '-no-metrics', '-feature', '-Vulkan'] + acceleration,
+        stdout=log, stderr=subprocess.STDOUT)
     try:
-        for _ in range(90):
+        for _ in range(180):
             if emu.poll() is not None:
                 raise RuntimeError('Emulator exited before boot')
             state = subprocess.run([adb, '-s', 'emulator-5554', 'shell', 'getprop', 'sys.boot_completed'],
