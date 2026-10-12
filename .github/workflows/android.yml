@@ -15,6 +15,15 @@ permissions:
   contents: read
 
 jobs:
+  recovery-windows:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Test SQLite WAL and recovery protections on Windows
+        run: python -m unittest discover -s android/recovery/tests -v
   android:
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -28,6 +37,8 @@ jobs:
           java-version: '17'
       - name: Host calculations and profile regression tests
         run: python3 android/scripts/test_host.py
+      - name: Non-destructive recovery migration tests
+        run: python3 -m unittest discover -s android/recovery/tests -v
       - name: Install Android compile SDK
         shell: bash
         run: |
@@ -38,3 +49,17 @@ jobs:
           python3 android/scripts/check_android.py \
             --android-jar "${ANDROID_HOME}/platforms/android-35/android.jar" \
             --build-tools "${ANDROID_HOME}/build-tools/35.0.0"
+      - name: Compile separate recovery application without signing keys
+        shell: bash
+        run: |
+          python3 android/recovery/build_recovery.py \
+            --android-jar "${ANDROID_HOME}/platforms/android-35/android.jar" \
+            --build-tools "${ANDROID_HOME}/build-tools/35.0.0" \
+            --unsigned --tests --output "${RUNNER_TEMP}/recovery-unsigned.apk"
+      - name: Install disposable Android migration test image
+        shell: bash
+        run: |
+          "${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager" "emulator" "system-images;android-35;aosp_atd;x86_64"
+          test -r /dev/kvm && test -w /dev/kvm
+      - name: Android migration and data preservation integration test
+        run: python3 android/recovery/tests/run_ci_emulator.py

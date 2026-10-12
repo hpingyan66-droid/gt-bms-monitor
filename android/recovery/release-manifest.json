@@ -1,0 +1,9 @@
+{
+  "package": "jp.k4159191.gtbms.recovery",
+  "version": "0.2.1-recovery.1",
+  "apk_filename": "GT-BMS-Android-0.2.1-recovery.1.apk",
+  "apk_sha256": "c31b171319980a80a43e0fa02a2848ab71885d3b5120aea141ac58bc0b84e3da",
+  "certificate_sha256": "19aab1ce8543bebd734f05723ad5fdb9eb24806f5fcf15d787aeb32cf2acf9c6",
+  "original_package": "jp.k4159191.gtbms.prototype",
+  "original_key_recovered": false
+}
