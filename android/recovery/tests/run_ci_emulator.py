@@ -41,8 +41,28 @@ for src, dst in [(work / 'unsigned.apk', work / 'recovery.apk'),
     run(*signer, 'verify', dst)
 (work / 'test-manifest.json').write_text(json.dumps({'package': 'jp.k4159191.gtbms.recovery',
     'apk_sha256': hashlib.sha256((work / 'recovery.apk').read_bytes()).hexdigest()}))
-run(sdk / 'cmdline-tools/latest/bin/avdmanager', 'create', 'avd', '--name', 'gtbms_recovery_ci',
-    '--package', 'system-images;android-35;aosp_atd;x86_64', input=b'no\n')
+# Use one explicit AVD directory: current avdmanager and emulator releases can
+# choose different default preference directories on hosted Linux runners.
+avd_home = work / 'avd'
+avd = avd_home / 'gtbms_recovery_ci.avd'
+avd.mkdir(parents=True)
+(avd_home / 'gtbms_recovery_ci.ini').write_text('avd.ini.encoding=UTF-8\npath=' + str(avd) + '\ntarget=android-35\n')
+(avd / 'config.ini').write_text('''avd.ini.encoding=UTF-8
+AvdId=gtbms_recovery_ci
+abi.type=x86_64
+hw.cpu.arch=x86_64
+hw.cpu.ncore=2
+hw.ramSize=2048
+hw.lcd.width=720
+hw.lcd.height=1280
+hw.lcd.density=320
+disk.dataPartition.size=2048M
+tag.id=aosp_atd
+tag.display=AOSP ATD
+PlayStore.enabled=false
+showDeviceFrame=no
+image.sysdir.1=''' + str(sdk / 'system-images/android-35/aosp_atd/x86_64') + '/\n')
+emulator_env = dict(os.environ, ANDROID_AVD_HOME=str(avd_home), ANDROID_SDK_ROOT=str(sdk))
 run(adb, 'start-server')
 with (work / 'emulator.log').open('w') as log:
     accelerated = os.path.exists('/dev/kvm') and os.access('/dev/kvm', os.R_OK | os.W_OK)
@@ -50,7 +70,7 @@ with (work / 'emulator.log').open('w') as log:
     emu = subprocess.Popen([str(sdk / 'emulator/emulator'), '-avd', 'gtbms_recovery_ci', '-no-window',
         '-no-audio', '-no-boot-anim', '-no-snapshot', '-gpu', 'off', '-cores', '2',
         '-memory', '2048', '-port', '5554', '-no-metrics', '-feature', '-Vulkan'] + acceleration,
-        stdout=log, stderr=subprocess.STDOUT)
+        stdout=log, stderr=subprocess.STDOUT, env=emulator_env)
     try:
         for _ in range(180):
             if emu.poll() is not None:
