@@ -236,7 +236,16 @@ public final class MainActivity extends Activity {
             found.put(address,name+"\n"+address+"  /  "+r.getRssi()+" dBm");addresses.clear();addresses.addAll(found.keySet());scanAdapter.clear();scanAdapter.addAll(found.values());scanAdapter.notifyDataSetChanged();
         }catch(SecurityException e){stopScan();hint.setText("Bluetooth権限がありません");problem("探索権限エラー","探索中に権限が取り消されました");}
     }
-    private void stopScan(){scanGeneration++;if(scanner!=null&&scanCallback!=null){try{scanner.stopScan(scanCallback);}catch(RuntimeException ignored){}ConnectionLog.add("探索停止","候補="+found.size()+"件");}scanner=null;scanCallback=null;}
+    private void stopScan(){
+        scanGeneration++;
+        if(scanner!=null&&scanCallback!=null){
+            try{scanner.stopScan(scanCallback);}
+            catch(SecurityException ignored){/* Permission may be revoked while scanning. */}
+            catch(RuntimeException ignored){}
+            ConnectionLog.add("探索停止","候補="+found.size()+"件");
+        }
+        scanner=null;scanCallback=null;
+    }
     private void confirmConnection(String address,String description){
         new AlertDialog.Builder(this).setTitle("この機器から読み取りますか？").setMessage(description+"\n\nWindows版・Xiaoxiangなど、接続中の他のBMSアプリがあれば切断してください。BLE機器は通常、Androidの設定で事前ペアリングせずアプリ内から接続します。")
             .setNegativeButton("戻る",null).setPositiveButton("接続",(d,w)->startMonitor(address)).show();

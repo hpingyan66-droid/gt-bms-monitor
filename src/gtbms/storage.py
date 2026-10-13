@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+import errno
 import json
+import os
 import sqlite3
 import threading
+import time
 from contextlib import closing, contextmanager
 from datetime import timedelta
 from pathlib import Path
@@ -34,6 +37,54 @@ CREATE TABLE IF NOT EXISTS outbox(id TEXT PRIMARY KEY, kind TEXT NOT NULL, paylo
 CREATE TABLE IF NOT EXISTS metadata(key TEXT PRIMARY KEY, value TEXT NOT NULL);
 PRAGMA user_version=1;
 """
+
+
+@contextmanager
+def _exclusive_file_lock(path: Path):
+    """Serialize backup creation and rotation across Store processes."""
+    with path.open("a+b") as handle:
+        # msvcrt locks a byte range. Ensure the first byte exists before locking it.
+        handle.seek(0, 2)
+        if handle.tell() == 0:
+            handle.write(b"\0")
+            handle.flush()
+        handle.seek(0)
+        if os.name == "nt":
+            import msvcrt
+            deadline = time.monotonic()+30
+            while True:
+                try:
+                    msvcrt.locking(handle.fileno(), msvcrt.LK_NBLCK, 1)
+                    break
+                except OSError as error:
+                    if error.errno not in (errno.EACCES, errno.EAGAIN, errno.EDEADLK):
+                        raise
+                    if time.monotonic() >= deadline:
+                        raise TimeoutError(f"Timed out waiting for backup lock: {path}") from error
+                    time.sleep(0.05)
+            try:
+                yield
+            finally:
+                handle.seek(0)
+                msvcrt.locking(handle.fileno(), msvcrt.LK_UNLCK, 1)
+        else:
+            import fcntl
+            fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
+            try:
+                yield
+            finally:
+                fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+
+
+def _backup_sequence(path: Path) -> int | None:
+    """Read the sortable generation from a new-format backup filename."""
+    parts = path.stem.rsplit("-", 2)
+    if len(parts) != 3 or not parts[0].startswith("gtbms-"):
+        return None
+    try:
+        return int(parts[1])
+    except ValueError:
+        return None
 
 
 class Store:
@@ -225,7 +276,15 @@ class Store:
     def _backup(self) -> Path:
         root = Path(self.config.backup_dir)
         root.mkdir(parents=True, exist_ok=True)
-        target = root/f"gtbms-{utcnow():%Y%m%dT%H%M%S%fZ}.sqlite3"
+        with _exclusive_file_lock(root/".gtbms-backup.lock"):
+            return self._backup_locked(root)
+
+    def _backup_locked(self, root: Path) -> Path:
+        previous = list(root.glob("gtbms-*.sqlite3"))
+        generation = max((_backup_sequence(path) or 0 for path in previous), default=0)+1
+        # Wall-clock timestamps can repeat on Windows. The generation is assigned
+        # under the directory lock; the UUID still makes a partial/manual copy safe.
+        target = root/f"gtbms-{utcnow():%Y%m%dT%H%M%S%fZ}-{generation:020d}-{uuid4().hex}.sqlite3"
         temp = target.with_suffix(".tmp")
         # A dedicated connection avoids holding the live writer lock during a
         # growing database's backup and integrity check.
@@ -234,8 +293,14 @@ class Store:
             if dest.execute("PRAGMA integrity_check").fetchone()[0] != "ok":
                 raise RuntimeError("Backup integrity failed")
         temp.replace(target)
+        def order(path: Path):
+            sequence = _backup_sequence(path)
+            # Pre-upgrade names have no generation and are older than new backups.
+            return (0, 0, path.name) if sequence is None else (1, sequence, path.name)
+        previous.sort(key=order)
+        excess = max(0, len(previous) + 1 - self.config.backup_keep)
         # Resolve each exact target within configured backup directory before removal.
-        for old in sorted(root.glob("gtbms-*.sqlite3"))[:-self.config.backup_keep]:
+        for old in previous[:excess]:
             if old.resolve().parent != root.resolve():
                 raise ValueError("Unsafe backup target")
             old.unlink()

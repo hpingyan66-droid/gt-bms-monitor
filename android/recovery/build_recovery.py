@@ -24,6 +24,9 @@ ANDROID = '{http://schemas.android.com/apk/res/android}'
 
 def build(args):
     root = Path(__file__).resolve().parents[1]
+    # Python file operations and child tools must use the same output location,
+    # even though the child tools run from the Android project directory.
+    args.output = args.output.resolve()
     java = shutil.which('java')
     if not java:
         raise RuntimeError('JDK 17 is required')
