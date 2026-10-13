@@ -31,6 +31,10 @@ private key, password, real trip data, or user-specific local path.
 Cross-process locking, rotation with identical timestamps and reversed UUIDs,
 and exception-release regression tests are included. CI now exercises the core
 Python suite on Windows and Linux, plus Android host parsing on Windows.
+The first Windows CI run exposed two pre-existing tests with fixed subsecond
+waits. These now wait for observable state transitions and gate the reconnect
+boundary; an additional delayed-storage case covers slow Windows scheduling.
+This correction changes tests only, not monitor runtime behavior.
 
 ## Local environment and test evidence
 
@@ -42,7 +46,8 @@ settings. SDK archive checksums and installed archive contents were verified.
 
 | Check | Result |
 | --- | --- |
-| Python suite | 756 passed, 2 skipped |
+| Python suite after CI test-timing hardening | 757 passed, 2 skipped |
+| Transport regression repetition | 10 runs, 120 tests passed, including delayed storage |
 | Android host tests | 2,612 assertions; 21 Java source files parsed |
 | Recovery Python tests | 14 passed |
 | JavaScript tests | 61 passed |
