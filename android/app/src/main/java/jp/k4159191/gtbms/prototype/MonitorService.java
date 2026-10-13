@@ -160,7 +160,14 @@ public final class MonitorService extends Service {
         h.removeCallbacks(timeout);h.removeCallbacks(connectTimeout);h.removeCallbacks(poll);
         // Delayed 04 tasks capture the retired GATT identity and cannot use a new connection.
         BluetoothGatt old=gatt;gatt=null;tx=null;expected=0;reply=null;basic=null;subscriptionPending=false;
-        if(old!=null){try{old.disconnect();}catch(RuntimeException ignored){}try{old.close();}catch(RuntimeException ignored){}}
+        if(old!=null){
+            try{old.disconnect();}
+            catch(SecurityException ignored){/* Continue cleanup after permission revocation. */}
+            catch(RuntimeException ignored){}
+            try{old.close();}
+            catch(SecurityException ignored){/* The retired GATT is already detached above. */}
+            catch(RuntimeException ignored){}
+        }
     }
     private void stopMonitor(){
         running=false;h.removeCallbacksAndMessages(null);closeGatt();if(wake!=null && wake.isHeld())wake.release();

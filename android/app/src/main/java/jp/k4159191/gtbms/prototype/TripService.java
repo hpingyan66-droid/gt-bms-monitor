@@ -48,6 +48,9 @@ public final class TripService extends Service implements SensorEventListener,Lo
         if(locations.getAllProviders().contains(LocationManager.GPS_PROVIDER))locations.requestLocationUpdates(LocationManager.GPS_PROVIDER,1000,0,this,thread.getLooper());
         else TripState.error="GPSプロバイダーがありません。座標・距離は測位待ちになります";
         worker.post(tick);
+    }catch(SecurityException e){
+        // Location permission can be revoked after onStartCommand checked it.
+        fail("開始処理: "+e.getClass().getSimpleName());
     }catch(Exception e){fail("開始処理: "+e.getClass().getSimpleName());}}
     private boolean register(int type,int period){Sensor s=sensors.getDefaultSensor(type);return s!=null&&sensors.registerListener(this,s,period,0,worker);}
     private static String yn(boolean b){return b?"あり":"なし";}

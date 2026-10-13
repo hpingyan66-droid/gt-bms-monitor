@@ -104,33 +104,61 @@ async def test_absent_address_sends_nothing(config):
     assert t.client is None
 
 
-async def test_stop_and_restart(store,config):
+async def wait_for_fresh(monitor):
+    # Saving through finish_io can exceed a fixed 80 ms on hosted Windows runners.
+    async with asyncio.timeout(5):
+        while not monitor.snapshot()["fresh"]:
+            await asyncio.sleep(.01)
+
+
+@pytest.mark.parametrize("save_delay",[0,.15])
+async def test_stop_and_restart(store,config,monkeypatch,save_delay):
+    save_sample=store.save_sample
+    def delayed_save(sample):
+        time.sleep(save_delay)
+        return save_sample(sample)
+    monkeypatch.setattr(store,"save_sample",delayed_save)
     m=Monitor(config,store)
-    await m.start();await asyncio.sleep(.08)
-    assert m.snapshot()["fresh"]
-    await m.stop();assert m.snapshot()["measurement"] is None
-    await m.start();await asyncio.sleep(.08)
-    assert m.snapshot()["fresh"]
-    await m.stop()
+    try:
+        await m.start();await wait_for_fresh(m)
+        assert m.snapshot()["fresh"]
+        await m.stop();assert m.snapshot()["measurement"] is None
+        await m.start();await wait_for_fresh(m)
+        assert m.snapshot()["fresh"]
+    finally:
+        await m.stop()
 
 
 async def test_reconnect_and_stale_values(store,config,monkeypatch):
+    failed=asyncio.Event()
+    resume=asyncio.Event()
     class Flaky(MockTransport):
         async def read(self):
             if self.counter==1:
                 self.counter+=1
                 raise ConnectionError()
             return await super().read()
-    monkeypatch.setattr('gtbms.monitor.backoff',lambda attempt:.2)
+        async def close(self):
+            if self.counter==2:
+                failed.set()
+                await resume.wait()
+            await super().close()
+    monkeypatch.setattr('gtbms.monitor.backoff',lambda attempt:.01)
     config.poll_seconds=.01
     m=Monitor(config,store,Flaky)
-    await m.start();await asyncio.sleep(.09)
-    assert m.state=="reconnecting"
-    assert m.snapshot()["measurement"] is None
-    await asyncio.sleep(.24)
-    assert m.state=="connected"
-    assert store.gaps()
-    await m.stop()
+    try:
+        await m.start()
+        await asyncio.wait_for(failed.wait(),5)
+        # Hold the reconnect boundary so a slow runner cannot miss this state.
+        assert m.state=="reconnecting"
+        assert m.snapshot()["measurement"] is None
+        resume.set()
+        await wait_for_fresh(m)
+        assert m.state=="connected"
+        assert store.gaps()
+    finally:
+        resume.set()
+        await m.stop()
 
 
 async def test_idle_ble_disconnect_invalidates_live_data_and_wakes_poll(config,frames,monkeypatch):
